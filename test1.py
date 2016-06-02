@@ -18,65 +18,75 @@ import numpy
 import requests
 
 
-def run_test(
-        base_url, username, password, user_domain_name, project_name,
-        project_domain_name, validation_count):
-    # Get a token as demo user.
-    req_body = {
-        'auth': {
-            'identity': {
-                'methods': ['password'],
-                'password': {
-                    'user': {
-                        'name': username,
-                        'domain': {'name': user_domain_name},
-                        'password': password
+class Test1(object):
+    def __init__(
+            self, base_url, username, password, user_domain_name, project_name,
+            project_domain_name, validation_count):
+        self.base_url = base_url
+        self.username = username
+        self.password = password
+        self.user_domain_name = user_domain_name
+        self.project_name = project_name
+        self.project_domain_name = project_domain_name
+        self.validation_count = validation_count
+
+    def run_test(self):
+        # Get a token as demo user.
+        req_body = {
+            'auth': {
+                'identity': {
+                    'methods': ['password'],
+                    'password': {
+                        'user': {
+                            'name': self.username,
+                            'domain': {'name': self.user_domain_name},
+                            'password': self.password
+                        }
                     }
-                }
-            },
-            'scope': {
-                'project': {
-                    'name': project_name,
-                    'domain': {'name': project_domain_name}
+                },
+                'scope': {
+                    'project': {
+                        'name': self.project_name,
+                        'domain': {'name': self.project_domain_name}
+                    }
                 }
             }
         }
-    }
 
-    response = requests.post(
-        '%s/v3/auth/tokens' % base_url,
-        headers={'Content-Type': 'application/json'},
-        json=req_body)
-    response.raise_for_status()
-    user_token = response.headers['X-Subject-Token']
-
-    # Validate the token
-    validation_times = []
-    total_start_time = time.time()
-    for i in xrange(validation_count):
-        start_time = time.time()
-        response = requests.get(
-            '%s/v3/auth/tokens' % base_url,
-            headers={
-                'Content-Type': 'application/json',
-                'X-Auth-Token': user_token,
-                'X-Subject-Token': user_token
-            })
+        response = requests.post(
+            '%s/v3/auth/tokens' % self.base_url,
+            headers={'Content-Type': 'application/json'},
+            json=req_body)
         response.raise_for_status()
-        end_time = time.time()
-        total_time = end_time - start_time
-        validation_times.append(total_time)
-    total_end_time = time.time()
+        user_token = response.headers['X-Subject-Token']
 
-    # Calculate P50/P90
-    min_val = min(validation_times)
-    max_val = max(validation_times)
-    p50 = numpy.percentile(validation_times, 50)
-    p90 = numpy.percentile(validation_times, 90)
-    total_time = sum(validation_times)
-    total_wall_time = total_end_time - total_start_time
-    print('P50/P90: %s/%s min/max: %s/%s total: %s wall: %s' % (
-        p50, p90, min_val, max_val, total_time, total_wall_time))
+        # Validate the token
+        validation_times = []
+        total_start_time = time.time()
+        for i in xrange(self.validation_count):
+            start_time = time.time()
+            response = requests.get(
+                '%s/v3/auth/tokens' % self.base_url,
+                headers={
+                    'Content-Type': 'application/json',
+                    'X-Auth-Token': user_token,
+                    'X-Subject-Token': user_token
+                })
+            response.raise_for_status()
+            end_time = time.time()
+            total_time = end_time - start_time
+            validation_times.append(total_time)
+        total_end_time = time.time()
+
+        # Calculate P50/P90
+        min_val = min(validation_times)
+        max_val = max(validation_times)
+        p50 = numpy.percentile(validation_times, 50)
+        p90 = numpy.percentile(validation_times, 90)
+        total_time = sum(validation_times)
+        total_wall_time = total_end_time - total_start_time
+        print('P50/P90: %s/%s min/max: %s/%s total: %s wall: %s' % (
+            p50, p90, min_val, max_val, total_time, total_wall_time))
 
 
 def main():
@@ -92,7 +102,7 @@ def main():
     parser.add_argument('--validation-count', default=100, type=int)
     args = parser.parse_args()
 
-    run_test(
+    test1 = Test1(
         args.url,
         args.username,
         args.password,
@@ -101,6 +111,7 @@ def main():
         args.project_domain_name,
         args.validation_count
     )
+    test1.run_test()
 
 
 main()
