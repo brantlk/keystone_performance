@@ -58,24 +58,11 @@ class Test1(object):
             headers={'Content-Type': 'application/json'},
             json=req_body)
         response.raise_for_status()
-        user_token = response.headers['X-Subject-Token']
+        self.user_token = response.headers['X-Subject-Token']
 
         # Validate the token
-        validation_times = []
         total_start_time = time.time()
-        for i in xrange(self.validation_count):
-            start_time = time.time()
-            response = requests.get(
-                '%s/v3/auth/tokens' % self.base_url,
-                headers={
-                    'Content-Type': 'application/json',
-                    'X-Auth-Token': user_token,
-                    'X-Subject-Token': user_token
-                })
-            response.raise_for_status()
-            end_time = time.time()
-            total_time = end_time - start_time
-            validation_times.append(total_time)
+        validation_times = self._validate_token()
         total_end_time = time.time()
 
         # Calculate P50/P90
@@ -87,6 +74,23 @@ class Test1(object):
         total_wall_time = total_end_time - total_start_time
         print('P50/P90: %s/%s min/max: %s/%s total: %s wall: %s' % (
             p50, p90, min_val, max_val, total_time, total_wall_time))
+
+    def _validate_token(self):
+        validation_times = []
+        for i in xrange(self.validation_count):
+            start_time = time.time()
+            response = requests.get(
+                '%s/v3/auth/tokens' % self.base_url,
+                headers={
+                    'Content-Type': 'application/json',
+                    'X-Auth-Token': self.user_token,
+                    'X-Subject-Token': self.user_token
+                })
+            response.raise_for_status()
+            end_time = time.time()
+            total_time = end_time - start_time
+            validation_times.append(total_time)
+        return validation_times
 
 
 def main():
@@ -114,4 +118,5 @@ def main():
     test1.run_test()
 
 
-main()
+if __name__ == '__main__':
+    main()
