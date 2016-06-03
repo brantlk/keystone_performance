@@ -12,16 +12,22 @@
 #   --validation-count: 100
 
 import argparse
+import functools
+import multiprocessing
 import time
 
 import numpy
 import requests
 
 
+def validate_token(test_1, i):
+    return test_1._validate_token()
+
+
 class Test1(object):
     def __init__(
             self, base_url, username, password, user_domain_name, project_name,
-            project_domain_name, validation_count):
+            project_domain_name, validation_count, concurrency=1):
         self.base_url = base_url
         self.username = username
         self.password = password
@@ -29,6 +35,7 @@ class Test1(object):
         self.project_name = project_name
         self.project_domain_name = project_domain_name
         self.validation_count = validation_count
+        self.concurrency = concurrency
 
     def run_test(self):
         # Get a token as demo user.
@@ -62,8 +69,13 @@ class Test1(object):
 
         # Validate the token
         total_start_time = time.time()
-        validation_times = self._validate_token()
+        pool = multiprocessing.Pool(self.concurrency)
+        f = functools.partial(validate_token, self)
+        res = pool.map(f, xrange(self.concurrency))
         total_end_time = time.time()
+        validation_times = []
+        for r in res:
+            validation_times.extend(r)
 
         # Calculate P50/P90
         min_val = min(validation_times)
@@ -104,6 +116,7 @@ def main():
     parser.add_argument('--project-name', default='demo')
     parser.add_argument('--project-domain-name', default='Default')
     parser.add_argument('--validation-count', default=100, type=int)
+    parser.add_argument('--concurrency', default=1, type=int)
     args = parser.parse_args()
 
     test1 = Test1(
@@ -113,7 +126,8 @@ def main():
         args.user_domain_name,
         args.project_name,
         args.project_domain_name,
-        args.validation_count
+        args.validation_count,
+        args.concurrency,
     )
     test1.run_test()
 
