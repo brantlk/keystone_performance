@@ -57,8 +57,7 @@ class ValidateTokenTest(ConcurrentTest):
             project_domain_name, validation_count, concurrency=1):
         super(ValidateTokenTest, self).__init__(
             base_url, username, password, user_domain_name, project_name,
-            project_domain_name, concurrency=1
-        )
+            project_domain_name, concurrency)
         self.validation_count = validation_count
 
     def _get_concurrent_launch_fn(self):
@@ -124,7 +123,7 @@ class IssueTokenTest(ConcurrentTest):
             project_domain_name, issue_count, concurrency=1):
         super(IssueTokenTest, self).__init__(
             base_url, username, password, user_domain_name, project_name,
-            project_domain_name, concurrency=1
+            project_domain_name, concurrency
         )
         self.issue_count = issue_count
 
