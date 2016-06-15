@@ -30,3 +30,14 @@ fast.
 Arguments, with default::
 
   --validation-count: 100
+
+
+issue_token
+~~~~~~~~~~~
+
+This test calls the issue token request (POST /v3/auth/tokens) with the same
+user.
+
+Arguments, with default::
+
+  --issue-count: 100
