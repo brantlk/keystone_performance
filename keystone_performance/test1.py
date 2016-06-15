@@ -10,22 +10,59 @@ import numpy
 import requests
 
 
-def validate_token(validate_token_test, i):
-    return validate_token_test._validate_token()
-
-
-class ValidateTokenTest(object):
+class ConcurrentTest(object):
     def __init__(
             self, base_url, username, password, user_domain_name, project_name,
-            project_domain_name, validation_count, concurrency=1):
+            project_domain_name, concurrency=1):
         self.base_url = base_url
         self.username = username
         self.password = password
         self.user_domain_name = user_domain_name
         self.project_name = project_name
         self.project_domain_name = project_domain_name
-        self.validation_count = validation_count
         self.concurrency = concurrency
+
+    def _get_concurrent_launch_fn(self):
+        return None
+
+    def run_test(self):
+        # Validate the token
+        total_start_time = time.time()
+        pool = multiprocessing.Pool(self.concurrency)
+        f = functools.partial(self._get_concurrent_launch_fn(), self)
+        res = pool.map(f, xrange(self.concurrency))
+        total_end_time = time.time()
+        times = []
+        for r in res:
+            times.extend(r)
+
+        # Calculate P50/P90
+        min_val = min(times)
+        max_val = max(times)
+        p50 = numpy.percentile(times, 50)
+        p90 = numpy.percentile(times, 90)
+        total_time = sum(times)
+        total_wall_time = total_end_time - total_start_time
+        print('P50/P90: %s/%s min/max: %s/%s total: %s wall: %s' % (
+            p50, p90, min_val, max_val, total_time, total_wall_time))
+
+
+def validate_token(validate_token_test, i):
+    return validate_token_test._validate_token()
+
+
+class ValidateTokenTest(ConcurrentTest):
+    def __init__(
+            self, base_url, username, password, user_domain_name, project_name,
+            project_domain_name, validation_count, concurrency=1):
+        super(ValidateTokenTest, self).__init__(
+            base_url, username, password, user_domain_name, project_name,
+            project_domain_name, concurrency=1
+        )
+        self.validation_count = validation_count
+
+    def _get_concurrent_launch_fn(self):
+        return validate_token
 
     def run_test(self):
         # Get a token as demo user.
@@ -57,25 +94,7 @@ class ValidateTokenTest(object):
         response.raise_for_status()
         self.user_token = response.headers['X-Subject-Token']
 
-        # Validate the token
-        total_start_time = time.time()
-        pool = multiprocessing.Pool(self.concurrency)
-        f = functools.partial(validate_token, self)
-        res = pool.map(f, xrange(self.concurrency))
-        total_end_time = time.time()
-        validation_times = []
-        for r in res:
-            validation_times.extend(r)
-
-        # Calculate P50/P90
-        min_val = min(validation_times)
-        max_val = max(validation_times)
-        p50 = numpy.percentile(validation_times, 50)
-        p90 = numpy.percentile(validation_times, 90)
-        total_time = sum(validation_times)
-        total_wall_time = total_end_time - total_start_time
-        print('P50/P90: %s/%s min/max: %s/%s total: %s wall: %s' % (
-            p50, p90, min_val, max_val, total_time, total_wall_time))
+        super(ValidateTokenTest, self).run_test()
 
     def _validate_token(self):
         validation_times = []
@@ -99,38 +118,18 @@ def issue_token(issue_token_test, i):
     return issue_token_test._issue_token()
 
 
-class IssueTokenTest(object):
+class IssueTokenTest(ConcurrentTest):
     def __init__(
             self, base_url, username, password, user_domain_name, project_name,
             project_domain_name, issue_count, concurrency=1):
-        self.base_url = base_url
-        self.username = username
-        self.password = password
-        self.user_domain_name = user_domain_name
-        self.project_name = project_name
-        self.project_domain_name = project_domain_name
+        super(IssueTokenTest, self).__init__(
+            base_url, username, password, user_domain_name, project_name,
+            project_domain_name, concurrency=1
+        )
         self.issue_count = issue_count
-        self.concurrency = concurrency
 
-    def run_test(self):
-        total_start_time = time.time()
-        pool = multiprocessing.Pool(self.concurrency)
-        f = functools.partial(issue_token, self)
-        res = pool.map(f, xrange(self.concurrency))
-        total_end_time = time.time()
-        issue_times = []
-        for r in res:
-            issue_times.extend(r)
-
-        # Calculate P50/P90
-        min_val = min(issue_times)
-        max_val = max(issue_times)
-        p50 = numpy.percentile(issue_times, 50)
-        p90 = numpy.percentile(issue_times, 90)
-        total_time = sum(issue_times)
-        total_wall_time = total_end_time - total_start_time
-        print('P50/P90: %s/%s min/max: %s/%s total: %s wall: %s' % (
-            p50, p90, min_val, max_val, total_time, total_wall_time))
+    def _get_concurrent_launch_fn(self):
+        return issue_token
 
     def _issue_token(self):
         issue_times = []
