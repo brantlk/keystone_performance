@@ -13,6 +13,7 @@
 #   --concurrency: 1
 
 import argparse
+import datetime
 import functools
 import multiprocessing
 import time
@@ -107,8 +108,6 @@ class Test1(object):
 
 
 def main():
-    print('Working...')
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--url', default='http://localhost:35357')
     parser.add_argument('--username', default='demo')
@@ -120,6 +119,7 @@ def main():
     parser.add_argument('--concurrency', default=1, type=int)
     args = parser.parse_args()
 
+    print('Test starting: %s' % datetime.datetime.now().isoformat())
     test1 = Test1(
         args.url,
         args.username,
@@ -131,6 +131,7 @@ def main():
         args.concurrency,
     )
     test1.run_test()
+    print('Test completed: %s' % datetime.datetime.now().isoformat())
 
 
 if __name__ == '__main__':
