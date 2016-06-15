@@ -22,11 +22,11 @@ import numpy
 import requests
 
 
-def validate_token(test_1, i):
-    return test_1._validate_token()
+def validate_token(validate_token_test, i):
+    return validate_token_test._validate_token()
 
 
-class Test1(object):
+class ValidateTokenTest(object):
     def __init__(
             self, base_url, username, password, user_domain_name, project_name,
             project_domain_name, validation_count, concurrency=1):
@@ -120,7 +120,7 @@ def main():
     args = parser.parse_args()
 
     print('Test starting: %s' % datetime.datetime.now().isoformat())
-    test1 = Test1(
+    validate_token_test = ValidateTokenTest(
         args.url,
         args.username,
         args.password,
@@ -130,7 +130,7 @@ def main():
         args.validation_count,
         args.concurrency,
     )
-    test1.run_test()
+    validate_token_test.run_test()
     print('Test completed: %s' % datetime.datetime.now().isoformat())
 
 
