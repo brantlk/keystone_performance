@@ -1,21 +1,9 @@
 
-# Gets a token for a user, then validates that token some # of times.
-# Prints out the perf stats for it.
-
-# Arguments:
-#   --url: http://localhost:35357
-#   --username: demo
-#   --password
-#   --user-domain-name: Default
-#   --project-name: demo
-#   --project-domain-name: Default
-#   --validation-count: 100
-#   --concurrency: 1
-
 import argparse
 import datetime
 import functools
 import multiprocessing
+import sys
 import time
 
 import numpy
@@ -109,6 +97,7 @@ class ValidateTokenTest(object):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--test', default='validate_one_token')
     parser.add_argument('--url', default='http://localhost:35357')
     parser.add_argument('--username', default='demo')
     parser.add_argument('--password')
@@ -119,18 +108,22 @@ def main():
     parser.add_argument('--concurrency', default=1, type=int)
     args = parser.parse_args()
 
+    if args.test == 'validate_one_token':
+        test = ValidateTokenTest(
+            args.url,
+            args.username,
+            args.password,
+            args.user_domain_name,
+            args.project_name,
+            args.project_domain_name,
+            args.validation_count,
+            args.concurrency,
+        )
+    else:
+        sys.exit('Unexpected test %r' % args.test)
+
     print('Test starting: %s' % datetime.datetime.now().isoformat())
-    validate_token_test = ValidateTokenTest(
-        args.url,
-        args.username,
-        args.password,
-        args.user_domain_name,
-        args.project_name,
-        args.project_domain_name,
-        args.validation_count,
-        args.concurrency,
-    )
-    validate_token_test.run_test()
+    test.run_test()
     print('Test completed: %s' % datetime.datetime.now().isoformat())
 
 
