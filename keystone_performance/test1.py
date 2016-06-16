@@ -13,7 +13,7 @@ import requests
 class ConcurrentTest(object):
     def __init__(
             self, base_url, username, password, user_domain_name, project_name,
-            project_domain_name, concurrency=1):
+            project_domain_name, concurrency):
         self.base_url = base_url
         self.username = username
         self.password = password
@@ -54,7 +54,7 @@ def validate_token(validate_token_test, i):
 class ValidateTokenTest(ConcurrentTest):
     def __init__(
             self, base_url, username, password, user_domain_name, project_name,
-            project_domain_name, validation_count, concurrency=1):
+            project_domain_name, validation_count, concurrency):
         super(ValidateTokenTest, self).__init__(
             base_url, username, password, user_domain_name, project_name,
             project_domain_name, concurrency)
@@ -64,7 +64,7 @@ class ValidateTokenTest(ConcurrentTest):
         return validate_token
 
     def run_test(self):
-        # Get a token as demo user.
+        # Get a token as the requested user.
         req_body = {
             'auth': {
                 'identity': {
@@ -120,7 +120,7 @@ def issue_token(issue_token_test, i):
 class IssueTokenTest(ConcurrentTest):
     def __init__(
             self, base_url, username, password, user_domain_name, project_name,
-            project_domain_name, issue_count, concurrency=1):
+            project_domain_name, issue_count, concurrency):
         super(IssueTokenTest, self).__init__(
             base_url, username, password, user_domain_name, project_name,
             project_domain_name, concurrency
