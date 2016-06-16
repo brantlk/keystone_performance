@@ -16,6 +16,13 @@ Common arguments, with default::
   --project-domain-name: Default
   --concurrency: 1
 
+Installing
+----------
+
+To install::
+
+  pip install git+https://github.com/brantlk/keystone_performance.git
+
 Tests
 -----
 
