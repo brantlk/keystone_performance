@@ -12,15 +12,14 @@ import requests
 
 class ConcurrentTest(object):
     def __init__(
-            self, base_url, username, password, user_domain_name, project_name,
-            project_domain_name, concurrency):
-        self.base_url = base_url
-        self.username = username
-        self.password = password
-        self.user_domain_name = user_domain_name
-        self.project_name = project_name
-        self.project_domain_name = project_domain_name
-        self.concurrency = concurrency
+            self, args):
+        self.base_url = args.url
+        self.username = args.username
+        self.password = args.password
+        self.user_domain_name = args.user_domain_name
+        self.project_name = args.project_name
+        self.project_domain_name = args.project_domain_name
+        self.concurrency = args.concurrency
 
     def _get_concurrent_launch_fn(self):
         return None
@@ -52,13 +51,9 @@ def validate_token(validate_token_test, i):
 
 
 class ValidateTokenTest(ConcurrentTest):
-    def __init__(
-            self, base_url, username, password, user_domain_name, project_name,
-            project_domain_name, validation_count, concurrency):
-        super(ValidateTokenTest, self).__init__(
-            base_url, username, password, user_domain_name, project_name,
-            project_domain_name, concurrency)
-        self.validation_count = validation_count
+    def __init__(self, args):
+        super(ValidateTokenTest, self).__init__(args)
+        self.validation_count = args.validation_count
 
     def _get_concurrent_launch_fn(self):
         return validate_token
@@ -118,14 +113,9 @@ def issue_token(issue_token_test, i):
 
 
 class IssueTokenTest(ConcurrentTest):
-    def __init__(
-            self, base_url, username, password, user_domain_name, project_name,
-            project_domain_name, issue_count, concurrency):
-        super(IssueTokenTest, self).__init__(
-            base_url, username, password, user_domain_name, project_name,
-            project_domain_name, concurrency
-        )
-        self.issue_count = issue_count
+    def __init__(self, args):
+        super(IssueTokenTest, self).__init__(args)
+        self.issue_count = args.issue_count
 
     def _get_concurrent_launch_fn(self):
         return issue_token
@@ -184,27 +174,9 @@ def main():
     args = parser.parse_args()
 
     if args.test == 'validate_one_token':
-        test = ValidateTokenTest(
-            args.url,
-            args.username,
-            args.password,
-            args.user_domain_name,
-            args.project_name,
-            args.project_domain_name,
-            args.validation_count,
-            args.concurrency,
-        )
+        test = ValidateTokenTest(args)
     elif args.test == 'issue_token':
-        test = IssueTokenTest(
-            args.url,
-            args.username,
-            args.password,
-            args.user_domain_name,
-            args.project_name,
-            args.project_domain_name,
-            args.issue_count,
-            args.concurrency,
-        )
+        test = IssueTokenTest(args)
     else:
         sys.exit('Unexpected test %r' % args.test)
 
