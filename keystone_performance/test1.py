@@ -174,12 +174,13 @@ def main():
     args = parser.parse_args()
 
     if args.test == 'validate_one_token':
-        test = ValidateTokenTest(args)
+        test_class = ValidateTokenTest
     elif args.test == 'issue_token':
-        test = IssueTokenTest(args)
+        test_class = IssueTokenTest
     else:
         sys.exit('Unexpected test %r' % args.test)
 
+    test = test_class(args)
     print('Test starting: %s' % datetime.datetime.now().isoformat())
     test.run_test()
     print('Test completed: %s' % datetime.datetime.now().isoformat())
