@@ -50,20 +50,29 @@ def main():
     args = parser.parse_args()
 
     times = []
-    for i in xrange(10):
+    last_report_time = time.time()
+    while True:
         start_time = time.time()
         issue_token(args)
         end_time = time.time()
         total_time = end_time - start_time
+
+        if len(times) >= 1000:
+            del times[0]
+
         times.append(total_time)
 
-    # Calculate P50/P90
-    min_val = min(times)
-    max_val = max(times)
-    p50 = numpy.percentile(times, 50)
-    p90 = numpy.percentile(times, 90)
-    total_time = sum(times)
-    print('P50/P90: %s/%s min/max: %s/%s' % (p50, p90, min_val, max_val))
+        if time.time() - last_report_time > 10:
+            last_report_time = time.time()
+
+            # Calculate P50/P90
+            min_val = min(times)
+            max_val = max(times)
+            p50 = numpy.percentile(times, 50)
+            p90 = numpy.percentile(times, 90)
+            total_time = sum(times)
+            print('P50/P90: %s/%s min/max: %s/%s measurements: %s' %
+                  (p50, p90, min_val, max_val, len(times)))
 
 
 if __name__ == '__main__':
