@@ -84,8 +84,8 @@ def issue_tokens(args):
             max_val = max(times)
             p50 = numpy.percentile(times, 50)
             p90 = numpy.percentile(times, 90)
-            print('P50/P90: %s/%s min/max: %s/%s measurements: %s' %
-                  (p50, p90, min_val, max_val, len(times)))
+            print('P50/P90: %s/%s min/max: %s/%s' %
+                  (p50, p90, min_val, max_val))
 
 
 def main():
