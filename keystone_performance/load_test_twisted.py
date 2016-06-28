@@ -48,12 +48,15 @@ class RequestGatherer(object):
 
     def _print(self):
         # Calculate P50/P90
-        min_val = min(self._response_times)
-        max_val = max(self._response_times)
-        p50 = numpy.percentile(self._response_times, 50)
-        p90 = numpy.percentile(self._response_times, 90)
-        print('P50/P90: %s/%s min/max: %s/%s falures: %s' %
-              (p50, p90, min_val, max_val, self._failures))
+        if self._response_times:
+            min_val = min(self._response_times)
+            max_val = max(self._response_times)
+            p50 = numpy.percentile(self._response_times, 50)
+            p90 = numpy.percentile(self._response_times, 90)
+            print('P50/P90: %s/%s min/max: %s/%s falures: %s' %
+                  (p50, p90, min_val, max_val, self._failures))
+        else:
+            print('falures: %s' % (self._failures, ))
         reactor.callLater(2, self._print)
 
 
