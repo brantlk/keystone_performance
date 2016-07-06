@@ -56,6 +56,12 @@ class RequestGatherer(object):
             self._state = 1
             self._reset()
 
+            reactor.callLater(3, self._notify_startup_reset)
+
+    def _notify_startup_reset(self):
+        print("Discarding warmup results.")
+        self._reset()
+
     def notify_response(self, new_time):
         if len(self._response_times) >= 10000:
             del self._response_times[0]
