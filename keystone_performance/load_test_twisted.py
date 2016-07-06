@@ -1,6 +1,7 @@
 
 import argparse
 import datetime
+import itertools
 import json
 import time
 
@@ -11,6 +12,10 @@ from twisted.web import client
 from twisted.web import http_headers
 from twisted.web import iweb
 from zope import interface
+
+
+def _not_null(x):
+    return x is not None
 
 
 class StringProducer(object):
@@ -42,7 +47,6 @@ class RequestGatherer(object):
 
     def _reset(self):
         self._response_times = []
-        self._failures = 0
 
     def start(self):
         reactor.callLater(3, self._print)
@@ -64,27 +68,40 @@ class RequestGatherer(object):
               datetime.datetime.now().isoformat())
         self._reset()
 
-    def notify_response(self, new_time):
+    def _add_response(self, time_or_none):
         if len(self._response_times) >= 10000:
             del self._response_times[0]
-        self._response_times.append(new_time)
+        self._response_times.append(time_or_none)
+
+    def notify_response(self, new_time):
+        self._add_response(new_time)
 
     def notify_failure_response(self):
-        self._failures += 1
+        self._add_response(None)
 
     def _print(self):
         # Calculate P50/P90
+        now = datetime.datetime.now().isoformat()
         if self._response_times:
-            min_val = min(self._response_times)
-            max_val = max(self._response_times)
-            p50 = numpy.percentile(self._response_times, 50)
-            p90 = numpy.percentile(self._response_times, 90)
-            print('%s P50/P90: %s/%s min/max: %s/%s falures: %s '
-                  'measurements: %s' %
-                  (datetime.datetime.now().isoformat(), p50, p90, min_val,
-                   max_val, self._failures, len(self._response_times)))
+            measurements = list(itertools.ifilter(_not_null,
+                                self._response_times))
+            failure_count = len(list(itertools.ifilterfalse(_not_null,
+                                self._response_times)))
+            failure_rate = (
+                float(failure_count) / len(self._response_times) * 100)
+            if measurements:
+                min_val = min(measurements)
+                max_val = max(measurements)
+                p50 = numpy.percentile(measurements, 50)
+                p90 = numpy.percentile(measurements, 90)
+                print('%s P50/P90: %s/%s min/max: %s/%s falures: %s %s%% '
+                      'measurements: %s' %
+                      (now, p50, p90, min_val, max_val, failure_count,
+                       failure_rate, len(measurements)))
+            else:
+                print('%s falures: %s' % (now, failure_count, ))
         else:
-            print('falures: %s' % (self._failures, ))
+            print("%s No responses yet." % (now, ))
         reactor.callLater(3, self._print)
 
 
