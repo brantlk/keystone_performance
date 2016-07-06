@@ -143,6 +143,7 @@ class Request(object):
     def response_cb(self, response):
         self._got_response = True
         if response.code != 201:
+            print("Request failed with code %s" % response.code)
             self._failed = True
 
     def shutdown_cb(self, ignored):
