@@ -31,12 +31,30 @@ class StringProducer(object):
 
 
 class RequestGatherer(object):
-    def __init__(self):
+    def __init__(self, concurrency):
+        self._state = 0  # waiting on initial results
+
+        self._concurrency = concurrency
+        self._initial_requests_received = 0
+
+        self._reset()
+
+    def _reset(self):
         self._response_times = []
         self._failures = 0
 
     def start(self):
         reactor.callLater(3, self._print)
+
+    def notify_initial_response(self):
+        if self._state != 0:
+            print("Got initial response after done??")
+            return
+        self._initial_requests_received += 1
+        if self._initial_requests_received >= self._concurrency:
+            print("All intial requests completed")
+            self._state = 1
+            self._reset()
 
     def notify_response(self, new_time):
         if len(self._response_times) >= 10000:
@@ -65,6 +83,8 @@ class Request(object):
         self._agent = agent
         self._request_gatherer = request_gatherer
         self._args = args
+
+        self._request_no = 0
 
         if self._args.user_domain_id:
             user_domain_info = {'id': self._args.user_domain_id}
@@ -116,6 +136,10 @@ class Request(object):
             self._failed = True
 
     def shutdown_cb(self, ignored):
+        self._request_no += 1
+        if self._request_no == 1:
+            self._request_gatherer.notify_initial_response()
+
         if not self._got_response or self._failed:
             self._request_gatherer.notify_failure_response()
         else:
@@ -139,7 +163,7 @@ def main():
     args = parser.parse_args()
 
     agent = client.Agent(reactor)
-    request_gatherer = RequestGatherer()
+    request_gatherer = RequestGatherer(args.concurrency)
 
     for i in range(args.concurrency):
         r = Request(agent, request_gatherer, args)
