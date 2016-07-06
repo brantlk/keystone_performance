@@ -1,5 +1,6 @@
 
 import argparse
+import datetime
 import json
 import time
 
@@ -52,14 +53,15 @@ class RequestGatherer(object):
             return
         self._initial_requests_received += 1
         if self._initial_requests_received >= self._concurrency:
-            print("All intial requests completed")
+            print("All initial requests completed")
             self._state = 1
             self._reset()
 
             reactor.callLater(3, self._notify_startup_reset)
 
     def _notify_startup_reset(self):
-        print("Discarding warmup results.")
+        print("%s Warmup complete (discarding results)." %
+              datetime.datetime.now().isoformat())
         self._reset()
 
     def notify_response(self, new_time):
@@ -77,8 +79,9 @@ class RequestGatherer(object):
             max_val = max(self._response_times)
             p50 = numpy.percentile(self._response_times, 50)
             p90 = numpy.percentile(self._response_times, 90)
-            print('P50/P90: %s/%s min/max: %s/%s falures: %s' %
-                  (p50, p90, min_val, max_val, self._failures))
+            print('%s P50/P90: %s/%s min/max: %s/%s falures: %s' %
+                  (datetime.datetime.now().isoformat(), p50, p90, min_val,
+                   max_val, self._failures))
         else:
             print('falures: %s' % (self._failures, ))
         reactor.callLater(3, self._print)
