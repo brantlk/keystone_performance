@@ -81,7 +81,7 @@ class RequestGatherer(object):
                   (p50, p90, min_val, max_val, self._failures))
         else:
             print('falures: %s' % (self._failures, ))
-        reactor.callLater(2, self._print)
+        reactor.callLater(3, self._print)
 
 
 class Request(object):
