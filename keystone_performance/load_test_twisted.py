@@ -79,9 +79,10 @@ class RequestGatherer(object):
             max_val = max(self._response_times)
             p50 = numpy.percentile(self._response_times, 50)
             p90 = numpy.percentile(self._response_times, 90)
-            print('%s P50/P90: %s/%s min/max: %s/%s falures: %s' %
+            print('%s P50/P90: %s/%s min/max: %s/%s falures: %s '
+                  'measurements: %s' %
                   (datetime.datetime.now().isoformat(), p50, p90, min_val,
-                   max_val, self._failures))
+                   max_val, self._failures, len(self._response_times)))
         else:
             print('falures: %s' % (self._failures, ))
         reactor.callLater(3, self._print)
