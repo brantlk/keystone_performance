@@ -18,6 +18,10 @@ def _not_null(x):
     return x is not None
 
 
+def timestamp():
+    return datetime.datetime.now().isoformat()
+
+
 class StringProducer(object):
     interface.implements(iweb.IBodyProducer)
 
@@ -57,15 +61,14 @@ class RequestGatherer(object):
             return
         self._initial_requests_received += 1
         if self._initial_requests_received >= self._concurrency:
-            print("All initial requests completed")
+            print("%s All initial requests completed" % (timestamp(), ))
             self._state = 1
             self._reset()
 
             reactor.callLater(3, self._notify_startup_reset)
 
     def _notify_startup_reset(self):
-        print("%s Warmup complete (discarding results)." %
-              datetime.datetime.now().isoformat())
+        print("%s Warmup complete (discarding results)." % (timestamp(), ))
         self._reset()
 
     def _add_response(self, time_or_none):
@@ -81,7 +84,7 @@ class RequestGatherer(object):
 
     def _print(self):
         # Calculate P50/P90
-        now = datetime.datetime.now().isoformat()
+        now = timestamp()
         if self._response_times:
             measurements = list(itertools.ifilter(_not_null,
                                 self._response_times))
