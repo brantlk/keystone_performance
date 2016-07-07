@@ -19,7 +19,7 @@ def _not_null(x):
 
 
 def timestamp():
-    return datetime.datetime.now().isoformat()
+    return datetime.datetime.utcnow().isoformat()
 
 
 class StringProducer(object):
