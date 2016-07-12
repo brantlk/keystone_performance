@@ -83,7 +83,6 @@ class RequestGatherer(object):
         self._add_response(None)
 
     def _print(self):
-        # Calculate P50/P90
         now = timestamp()
         if self._response_times:
             measurements = list(itertools.ifilter(_not_null,
