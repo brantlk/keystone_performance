@@ -72,7 +72,7 @@ class RequestGatherer(object):
         self._reset()
 
     def _add_response(self, time_or_none):
-        if len(self._response_times) >= 10000:
+        if len(self._response_times) >= 100000:
             del self._response_times[0]
         self._response_times.append(time_or_none)
 
