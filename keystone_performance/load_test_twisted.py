@@ -96,9 +96,10 @@ class RequestGatherer(object):
                 max_val = max(measurements)
                 p50 = numpy.percentile(measurements, 50)
                 p90 = numpy.percentile(measurements, 90)
-                print('%s P50/P90: %s/%s min/max: %s/%s falures: %s %s%% '
-                      'measurements: %s' %
-                      (now, p50, p90, min_val, max_val, failure_count,
+                std = numpy.std(measurements)
+                print('%s P50/P90: %s/%s min/max: %s/%s std: %s'
+                      ' falures: %s %s%% measurements: %s' %
+                      (now, p50, p90, min_val, max_val, std, failure_count,
                        failure_rate, len(measurements)))
             else:
                 print('%s falures: %s' % (now, failure_count, ))
