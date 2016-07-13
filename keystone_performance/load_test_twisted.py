@@ -21,6 +21,7 @@ def _not_null(x):
 def format_timestamp(ts):
     return ts.strftime('%Y-%m-%d %H:%M:%S.%f')
 
+
 def timestamp():
     return format_timestamp(datetime.datetime.utcnow())
 
@@ -57,7 +58,8 @@ class TestTracker(object):
         self._requests = []
 
         for i in range(self._concurrency):
-            r = Request(self._agent, self._request_gatherer, self._args)
+            r = Request(self._agent, self._request_gatherer, self._args,
+                        on_complete=self._notify_request_complete)
             r.start()
             self._requests.append(r)
 
@@ -82,11 +84,18 @@ class TestTracker(object):
                 start_time=format_timestamp(self._start_time),
                 end_time=format_timestamp(end_time), **conc_stats))
 
+        print("Waiting on {0} requests to complete".format(self._concurrency))
+        self._requests_complete = 0
+
         for r in self._requests:
             r.notify_done()
 
-        # FIXME: wait for all requests to stop.
-        # FIXME: go on to the next concurrency.
+    def _notify_request_complete(self):
+        self._requests_complete += 1
+        print("{0} of {1} requests complete".format(
+            self._requests_complete, self._concurrency))
+
+        # FIXME: if all requests complete then go on to next concurrency!
 
 
 class RequestGatherer(object):
@@ -193,10 +202,11 @@ class RequestGatherer(object):
 
 
 class Request(object):
-    def __init__(self, agent, request_gatherer, args):
+    def __init__(self, agent, request_gatherer, args, on_complete=None):
         self._agent = agent
         self._request_gatherer = request_gatherer
         self._args = args
+        self._on_complete = on_complete
 
         self._request_no = 0
         self._done = False
@@ -255,7 +265,7 @@ class Request(object):
         if self._done:
             # Just waiting for this to complete
             print("Request complete")
-            # FIXME: notify the test tracker.
+            self._on_complete()
             return
 
         self._request_no += 1
