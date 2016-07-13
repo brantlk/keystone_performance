@@ -57,6 +57,8 @@ class TestTracker(object):
 
     def start(self):
         self._concurrency = self._concurrencies[self._concurrency_idx]
+        print("Kicking off testing at concurrency {0}".format(
+            self._concurrency))
         self._request_gatherer = (
             RequestGatherer(self._concurrency,
                             on_test_started=self._test_started))
@@ -71,12 +73,10 @@ class TestTracker(object):
         self._request_gatherer.start()
 
     def _test_started(self):
-        print("TestTracker: Notified test started.")
         reactor.callLater(15, self._done)
         self._start_time = datetime.datetime.utcnow()
 
     def _done(self):
-        print("TestTracker supposed to be done now...")
         end_time = datetime.datetime.utcnow()
         conc_stats = self._request_gatherer.notify_complete()
         conc_stats['concurrency'] = self._concurrency
@@ -85,20 +85,20 @@ class TestTracker(object):
         self._stats.append(conc_stats)
 
         print(
-            "{concurrency} start_time: {start_time} end_time: {end_time} "
-            "latency: {p90}".format(**conc_stats))
+            "concurrency: {concurrency} start_time: {start_time} "
+            "end_time: {end_time} latency: {p90}".format(**conc_stats))
 
-        print("Waiting on {0} requests to complete".format(self._concurrency))
+        # Notify all the Requests that the test is complete.
         self._requests_complete = 0
-
         for r in self._requests:
             r.notify_done()
+        print(
+            "Concurrency {0} test complete. "
+            "Waiting on outstanding requests to complete...".format(
+                self._concurrency))
 
     def _notify_request_complete(self):
         self._requests_complete += 1
-        print("{0} of {1} requests complete".format(
-            self._requests_complete, self._concurrency))
-
         if self._requests_complete != self._concurrency:
             # Still waiting for all requests to complete.
             return
@@ -114,11 +114,12 @@ class TestTracker(object):
         self.start()
 
     def _print_results(self):
+        print("\nSummary:")
         for s in self._stats:
             print(
                 "concurrency: {concurrency} start_time: {start_time} "
                 "end_time: {end_time} measurements: {measure_count} "
-                "failure_count: {failure_count} failure_rate: {failure_rate} "
+                "failures: {failure_count} failure_rate: {failure_rate} "
                 "minimum: {min_val} maximum: {max_val} p50: {p50} p90: {p90} "
                 "std_deviation: {std}".format(**s))
 
@@ -198,8 +199,7 @@ class RequestGatherer(object):
         return ret
 
     def notify_complete(self):
-        print("Notified complete...")
-        self._state = 2
+        self._state = 2  # Test is complete.
 
         self._print_delayed_call.cancel()
         if self._startup_reset_delayed_call:
@@ -288,8 +288,8 @@ class Request(object):
 
     def shutdown_cb(self, ignored):
         if self._done:
-            # Just waiting for this to complete
-            print("Request complete")
+            # Was waiting for the outstanding request to complete. Now it's
+            # done.
             self._on_complete()
             return
 
@@ -305,7 +305,7 @@ class Request(object):
         self.start()
 
     def notify_done(self):
-        print("Request notified to stop.")
+        # This test is done. Set a flag so don't send more requests.
         self._done = True
 
 
