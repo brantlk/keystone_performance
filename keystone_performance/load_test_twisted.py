@@ -50,7 +50,15 @@ class TestTracker(object):
 
         self._agent = client.Agent(reactor)
 
-        self._concurrencies = [1, 2, 4]
+        if args.type == 'quick':
+            self._run_time = 20  # seconds
+            self._concurrencies = [1, 2, 4, 8]
+        else:  # Full run
+            self._run_time = 60 * 2  # seconds
+            self._concurrencies = [
+                4, 8, 12, 16, 20, 24, 28, 32, 40, 50, 64, 90, 100, 150, 200,
+                250, 300, 350, 400, 600, 800]
+
         self._concurrency_idx = 0
 
         self._stats = []
@@ -73,7 +81,7 @@ class TestTracker(object):
         self._request_gatherer.start()
 
     def _test_started(self):
-        reactor.callLater(15, self._done)
+        reactor.callLater(self._run_time, self._done)
         self._start_time = datetime.datetime.utcnow()
 
     def _done(self):
@@ -320,6 +328,7 @@ def main():
     parser.add_argument('--project-id')
     parser.add_argument('--project-domain-name', default='Default')
     parser.add_argument('--project-domain-id')
+    parser.add_argument('--type', default='full', choices=['full', 'quick'])
     args = parser.parse_args()
 
     test_tracker = TestTracker(args)
