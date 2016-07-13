@@ -80,8 +80,8 @@ class TestTracker(object):
         end_time = datetime.datetime.utcnow()
         conc_stats = self._request_gatherer.notify_complete()
         conc_stats['concurrency'] = self._concurrency
-        conc_stats['start_time'] = self._start_time
-        conc_stats['end_time'] = end_time
+        conc_stats['start_time'] = format_timestamp(self._start_time)
+        conc_stats['end_time'] = format_timestamp(end_time)
         self._stats.append(conc_stats)
 
         print(
