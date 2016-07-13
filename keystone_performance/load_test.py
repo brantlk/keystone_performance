@@ -320,7 +320,9 @@ def print_summary(results):
 def write_out_file(out_file_name, results):
     with open(out_file_name, 'w') as f:
         for s in results:
-            f.write("{start_time},{end_time},{concurrency}\n".format(**s))
+            f.write(
+                "{start_time},{end_time},{concurrency},{p90}\n".format(
+                    **s))
 
 
 def main():

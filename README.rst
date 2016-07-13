@@ -38,9 +38,10 @@ Arguments, with default (if any)::
 For developers, you'll want to set ``--type=quick`` this runs a few low
 concurrency tests for a short time just to show that the program works.
 
-If --out_file is provided then a file is generated::
+If --out_file is provided then a file is generated with 1 line per
+concurrency::
 
-  <start time>,<end time>,<concurrency>
+  <start time>,<end time>,<concurrency>,<latency p90>
 
 
 test1
