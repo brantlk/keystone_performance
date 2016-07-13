@@ -48,7 +48,9 @@ class TestTracker(object):
         self._agent = client.Agent(reactor)
 
     def start(self):
-        self._request_gatherer = RequestGatherer(self._concurrency)
+        self._request_gatherer = (
+            RequestGatherer(self._concurrency,
+                            on_test_started=self._test_started))
         self._requests = []
 
         for i in range(self._concurrency):
@@ -58,7 +60,8 @@ class TestTracker(object):
 
         self._request_gatherer.start()
 
-        # FIXME: this actually can't happen until after the warmup time.
+    def _test_started(self):
+        print("TestTracker: Notified test started.")
         reactor.callLater(30, self._done)
 
     def _done(self):
@@ -78,14 +81,14 @@ class TestTracker(object):
 
 
 class RequestGatherer(object):
-    def __init__(self, concurrency):
-        self._state = 0  # waiting on initial results
-
+    def __init__(self, concurrency, on_test_started):
         self._concurrency = concurrency
+        self._on_test_started = on_test_started
+
+        self._state = 0  # waiting on initial results
         self._initial_requests_received = 0
         self._print_delayed_call = None
         self._startup_reset_delayed_call = None
-
         self._start_time = None
         self._reset()
 
@@ -114,6 +117,7 @@ class RequestGatherer(object):
         self._reset()
         self._startup_reset_delayed_call = None
         self._start_time = datetime.datetime.utcnow()
+        self._on_test_started()
 
     def _add_response(self, time_or_none):
         if len(self._response_times) >= 100000:
