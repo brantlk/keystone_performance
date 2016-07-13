@@ -61,7 +61,7 @@ class TestTracker(object):
 
         self._concurrency_idx = 0
 
-        self._stats = []
+        self.stats = []
 
     def start(self):
         self._concurrency = self._concurrencies[self._concurrency_idx]
@@ -90,7 +90,7 @@ class TestTracker(object):
         conc_stats['concurrency'] = self._concurrency
         conc_stats['start_time'] = format_timestamp(self._start_time)
         conc_stats['end_time'] = format_timestamp(end_time)
-        self._stats.append(conc_stats)
+        self.stats.append(conc_stats)
 
         print(
             "concurrency: {concurrency} start_time: {start_time} "
@@ -115,21 +115,10 @@ class TestTracker(object):
         self._concurrency_idx += 1
         if self._concurrency_idx >= len(self._concurrencies):
             # There is no next concurrency. We're done.
-            self._print_results()
             reactor.stop()
             return
 
         self.start()
-
-    def _print_results(self):
-        print("\nSummary:")
-        for s in self._stats:
-            print(
-                "concurrency: {concurrency} start_time: {start_time} "
-                "end_time: {end_time} measurements: {measure_count} "
-                "failures: {failure_count} failure_rate: {failure_rate} "
-                "minimum: {min_val} maximum: {max_val} p50: {p50} p90: {p90} "
-                "std_deviation: {std}".format(**s))
 
 
 class RequestGatherer(object):
@@ -317,6 +306,17 @@ class Request(object):
         self._done = True
 
 
+def print_summary(results):
+    print("\nSummary:")
+    for s in results:
+        print(
+            "concurrency: {concurrency} start_time: {start_time} "
+            "end_time: {end_time} measurements: {measure_count} "
+            "failures: {failure_count} failure_rate: {failure_rate} "
+            "minimum: {min_val} maximum: {max_val} p50: {p50} p90: {p90} "
+            "std_deviation: {std}".format(**s))
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--url', default='http://localhost:35357')
@@ -335,6 +335,8 @@ def main():
     test_tracker.start()
 
     reactor.run()
+
+    print_summary(test_tracker.stats)
 
 
 main()
