@@ -48,10 +48,13 @@ class TestTracker(object):
     def __init__(self, args):
         self._args = args
 
-        self._concurrency = 1
         self._agent = client.Agent(reactor)
 
+        self._concurrencies = [1, 2]
+        self._concurrency_idx = 0
+
     def start(self):
+        self._concurrency = self._concurrencies[self._concurrency_idx]
         self._request_gatherer = (
             RequestGatherer(self._concurrency,
                             on_test_started=self._test_started))
@@ -95,7 +98,18 @@ class TestTracker(object):
         print("{0} of {1} requests complete".format(
             self._requests_complete, self._concurrency))
 
-        # FIXME: if all requests complete then go on to next concurrency!
+        if self._requests_complete != self._concurrency:
+            # Still waiting for all requests to complete.
+            return
+
+        # All requests complete! Go on to the next concurrency.
+        self._concurrency_idx += 1
+        if self._concurrency_idx >= len(self._concurrencies):
+            # There is no next concurrency. We're done.
+            reactor.stop()
+            return
+
+        self.start()
 
 
 class RequestGatherer(object):
