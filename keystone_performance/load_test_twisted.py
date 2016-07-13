@@ -50,8 +50,10 @@ class TestTracker(object):
 
         self._agent = client.Agent(reactor)
 
-        self._concurrencies = [1, 2]
+        self._concurrencies = [1, 2, 4]
         self._concurrency_idx = 0
+
+        self._stats = []
 
     def start(self):
         self._concurrency = self._concurrencies[self._concurrency_idx]
@@ -77,15 +79,14 @@ class TestTracker(object):
         print("TestTracker supposed to be done now...")
         end_time = datetime.datetime.utcnow()
         conc_stats = self._request_gatherer.notify_complete()
-        # FIXME: save the stats so can use them when complete.
+        conc_stats['concurrency'] = self._concurrency
+        conc_stats['start_time'] = self._start_time
+        conc_stats['end_time'] = end_time
+        self._stats.append(conc_stats)
 
-        # FIXME: more stats.
         print(
             "{concurrency} start_time: {start_time} end_time: {end_time} "
-            "latency: {p90}".format(
-                concurrency=self._concurrency,
-                start_time=format_timestamp(self._start_time),
-                end_time=format_timestamp(end_time), **conc_stats))
+            "latency: {p90}".format(**conc_stats))
 
         print("Waiting on {0} requests to complete".format(self._concurrency))
         self._requests_complete = 0
@@ -106,10 +107,20 @@ class TestTracker(object):
         self._concurrency_idx += 1
         if self._concurrency_idx >= len(self._concurrencies):
             # There is no next concurrency. We're done.
+            self._print_results()
             reactor.stop()
             return
 
         self.start()
+
+    def _print_results(self):
+        for s in self._stats:
+            print(
+                "concurrency: {concurrency} start_time: {start_time} "
+                "end_time: {end_time} measurements: {measure_count} "
+                "failure_count: {failure_count} failure_rate: {failure_rate} "
+                "minimum: {min_val} maximum: {max_val} p50: {p50} p90: {p90} "
+                "std_deviation: {std}".format(**s))
 
 
 class RequestGatherer(object):
