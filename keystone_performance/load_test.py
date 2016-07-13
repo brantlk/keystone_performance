@@ -317,6 +317,12 @@ def print_summary(results):
             "std_deviation: {std}".format(**s))
 
 
+def write_out_file(out_file_name, results):
+    with open(out_file_name, 'w') as f:
+        for s in results:
+            f.write("{start_time},{end_time},{concurrency}\n".format(**s))
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--url', default='http://localhost:35357')
@@ -329,6 +335,7 @@ def main():
     parser.add_argument('--project-domain-name', default='Default')
     parser.add_argument('--project-domain-id')
     parser.add_argument('--type', default='full', choices=['full', 'quick'])
+    parser.add_argument('--out-file')
     args = parser.parse_args()
 
     test_tracker = TestTracker(args)
@@ -337,6 +344,8 @@ def main():
     reactor.run()
 
     print_summary(test_tracker.stats)
+    if args.out_file:
+        write_out_file(args.out_file, test_tracker.stats)
 
 
 main()

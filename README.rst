@@ -21,7 +21,7 @@ This test generates load at a certain concurrency for some amount of time, then
 generates load at another concurrency and so forth. When all the concurrencies
 are run it prints out a summary.
 
-Common arguments, with default (if any)::
+Arguments, with default (if any)::
 
   --type: full
   --url: http://localhost:35357
@@ -33,9 +33,14 @@ Common arguments, with default (if any)::
   --project-id
   --project-domain-name: Default
   --project-domain-id
+  --out-file
 
 For developers, you'll want to set ``--type=quick`` this runs a few low
 concurrency tests for a short time just to show that the program works.
+
+If --out_file is provided then a file is generated::
+
+  <start time>,<end time>,<concurrency>
 
 
 test1
