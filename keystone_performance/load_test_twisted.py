@@ -18,8 +18,11 @@ def _not_null(x):
     return x is not None
 
 
+def format_timestamp(ts):
+    return ts.strftime('%Y-%m-%d %H:%M:%S.%f')
+
 def timestamp():
-    return datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+    return format_timestamp(datetime.datetime.utcnow())
 
 
 class StringProducer(object):
@@ -62,16 +65,22 @@ class TestTracker(object):
 
     def _test_started(self):
         print("TestTracker: Notified test started.")
-        reactor.callLater(30, self._done)
+        reactor.callLater(15, self._done)
+        self._start_time = datetime.datetime.utcnow()
 
     def _done(self):
         print("TestTracker supposed to be done now...")
+        end_time = datetime.datetime.utcnow()
         conc_stats = self._request_gatherer.notify_complete()
         # FIXME: save the stats so can use them when complete.
 
         # FIXME: more stats.
-        print("start_time: {start_time} end_time: {end_time}".format(
-            **conc_stats))
+        print(
+            "{concurrency} start_time: {start_time} end_time: {end_time} "
+            "latency: {p90}".format(
+                concurrency=self._concurrency,
+                start_time=format_timestamp(self._start_time),
+                end_time=format_timestamp(end_time), **conc_stats))
 
         for r in self._requests:
             r.notify_done()
@@ -163,8 +172,6 @@ class RequestGatherer(object):
             self._startup_reset_delayed_call.cancel()
 
         stats = self._calc_stats()
-        stats['start_time'] = self._start_time
-        stats['end_time'] = datetime.datetime.utcnow()
         return stats
 
     def _print(self):
