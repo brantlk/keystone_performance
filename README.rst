@@ -1,9 +1,47 @@
-Simple keystone performance tests
-=================================
+Keystone performance tests
+==========================
 
 Tools for testing keystone performance.
 
-Run `python keystone_performance.test1`
+This repository contains a couple of scripts for testing keystone performance.
+
+Installing
+----------
+
+To install::
+
+  pip install git+https://github.com/brantlk/keystone_performance.git
+
+load_test
+~~~~~~~~~
+
+Run ``python keystone_performance.load_test``
+
+This test generates load at a certain concurrency for some amount of time, then
+generates load at another concurrency and so forth. When all the concurrencies
+are run it prints out a summary.
+
+Common arguments, with default (if any)::
+
+  --type: full
+  --url: http://localhost:35357
+  --username: demo
+  --password
+  --user-domain-name: Default
+  --user-domain-id
+  --project-name: demo
+  --project-id
+  --project-domain-name: Default
+  --project-domain-id
+
+For developers, you'll want to set ``--type=quick`` this runs a few low
+concurrency tests for a short time just to show that the program works.
+
+
+test1
+-----
+
+Run ``python keystone_performance.test1``
 
 Common arguments, with default::
 
@@ -16,18 +54,11 @@ Common arguments, with default::
   --project-domain-name: Default
   --concurrency: 1
 
-Installing
-----------
-
-To install::
-
-  pip install git+https://github.com/brantlk/keystone_performance.git
-
 Tests
------
+~~~~~
 
 validate_one_token
-~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 This test gets one token, then validates it multiple times.
 If token caching is enabled and configured on the server, this test will show
@@ -40,9 +71,9 @@ Arguments, with default::
 
 
 issue_token
-~~~~~~~~~~~
+^^^^^^^^^^^
 
-This test calls the issue token request (POST /v3/auth/tokens) with the same
+This test calls the issue token request (``POST /v3/auth/tokens``) with the same
 user.
 
 Arguments, with default::
