@@ -40,36 +40,80 @@ class StringProducer(object):
         pass
 
 
+class TestTracker(object):
+    def __init__(self, args):
+        self._args = args
+
+        self._concurrency = 1
+        self._agent = client.Agent(reactor)
+
+    def start(self):
+        self._request_gatherer = RequestGatherer(self._concurrency)
+        self._requests = []
+
+        for i in range(self._concurrency):
+            r = Request(self._agent, self._request_gatherer, self._args)
+            r.start()
+            self._requests.append(r)
+
+        self._request_gatherer.start()
+
+        # FIXME: this actually can't happen until after the warmup time.
+        reactor.callLater(30, self._done)
+
+    def _done(self):
+        print("TestTracker supposed to be done now...")
+        conc_stats = self._request_gatherer.notify_complete()
+        # FIXME: save the stats so can use them when complete.
+
+        # FIXME: more stats.
+        print("start_time: {start_time} end_time: {end_time}".format(
+            **conc_stats))
+
+        for r in self._requests:
+            r.notify_done()
+
+        # FIXME: wait for all requests to stop.
+        # FIXME: go on to the next concurrency.
+
+
 class RequestGatherer(object):
     def __init__(self, concurrency):
         self._state = 0  # waiting on initial results
 
         self._concurrency = concurrency
         self._initial_requests_received = 0
+        self._print_delayed_call = None
+        self._startup_reset_delayed_call = None
 
+        self._start_time = None
         self._reset()
 
     def _reset(self):
         self._response_times = []
 
     def start(self):
-        reactor.callLater(3, self._print)
+        self._print_delayed_call = reactor.callLater(3, self._print)
 
     def notify_initial_response(self):
         if self._state != 0:
             print("Got initial response after done??")
             return
+
         self._initial_requests_received += 1
         if self._initial_requests_received >= self._concurrency:
             print("%s All initial requests completed" % (timestamp(), ))
             self._state = 1
             self._reset()
 
-            reactor.callLater(3, self._notify_startup_reset)
+            self._startup_reset_delayed_call = (
+                reactor.callLater(5, self._notify_startup_reset))
 
     def _notify_startup_reset(self):
         print("%s Warmup complete (discarding results)." % (timestamp(), ))
         self._reset()
+        self._startup_reset_delayed_call = None
+        self._start_time = datetime.datetime.utcnow()
 
     def _add_response(self, time_or_none):
         if len(self._response_times) >= 100000:
@@ -82,30 +126,59 @@ class RequestGatherer(object):
     def notify_failure_response(self):
         self._add_response(None)
 
+    def _calc_stats(self):
+        if not self._response_times:
+            return None
+
+        ret = {}
+
+        measurements = list(
+            itertools.ifilter(_not_null, self._response_times))
+        ret['measure_count'] = len(measurements)
+        ret['failure_count'] = len(list(
+            itertools.ifilterfalse(_not_null, self._response_times)))
+        ret['failure_rate'] = (
+            float(ret['failure_count']) / len(self._response_times) * 100)
+
+        if not measurements:
+            return ret
+
+        ret['min_val'] = min(measurements)
+        ret['max_val'] = max(measurements)
+        ret['p50'] = numpy.percentile(measurements, 50)
+        ret['p90'] = numpy.percentile(measurements, 90)
+        ret['std'] = numpy.std(measurements)
+        return ret
+
+    def notify_complete(self):
+        print("Notified complete...")
+        self._state = 2
+
+        self._print_delayed_call.cancel()
+        if self._startup_reset_delayed_call:
+            self._startup_reset_delayed_call.cancel()
+
+        stats = self._calc_stats()
+        stats['start_time'] = self._start_time
+        stats['end_time'] = datetime.datetime.utcnow()
+        return stats
+
     def _print(self):
+        stats = self._calc_stats()
         now = timestamp()
-        if self._response_times:
-            measurements = list(itertools.ifilter(_not_null,
-                                self._response_times))
-            failure_count = len(list(itertools.ifilterfalse(_not_null,
-                                self._response_times)))
-            failure_rate = (
-                float(failure_count) / len(self._response_times) * 100)
-            if measurements:
-                min_val = min(measurements)
-                max_val = max(measurements)
-                p50 = numpy.percentile(measurements, 50)
-                p90 = numpy.percentile(measurements, 90)
-                std = numpy.std(measurements)
-                print('%s P50/P90: %s/%s min/max: %s/%s std: %s'
-                      ' falures: %s %s%% measurements: %s' %
-                      (now, p50, p90, min_val, max_val, std, failure_count,
-                       failure_rate, len(measurements)))
-            else:
-                print('%s falures: %s' % (now, failure_count, ))
+        if stats is None:
+            print("{0} No responses yet.".format(now))
         else:
-            print("%s No responses yet." % (now, ))
-        reactor.callLater(3, self._print)
+            stats['now'] = now
+            if 'p90' in stats:
+                print('{now} P50/P90: {p50}/{p90} '
+                      'min/max: {min_val}/{max_val}  std: {std} '
+                      'falures: {failure_count} {failure_rate}% '
+                      'measurements: {measure_count}'.format(**stats))
+            else:
+                print('{now} falures: {failure_count}'.format(**stats))
+
+        self._print_delayed_call = reactor.callLater(3, self._print)
 
 
 class Request(object):
@@ -115,6 +188,7 @@ class Request(object):
         self._args = args
 
         self._request_no = 0
+        self._done = False
 
         if self._args.user_domain_id:
             user_domain_info = {'id': self._args.user_domain_id}
@@ -167,6 +241,12 @@ class Request(object):
             self._failed = True
 
     def shutdown_cb(self, ignored):
+        if self._done:
+            # Just waiting for this to complete
+            print("Request complete")
+            # FIXME: notify the test tracker.
+            return
+
         self._request_no += 1
         if self._request_no == 1:
             self._request_gatherer.notify_initial_response()
@@ -177,6 +257,10 @@ class Request(object):
             end_time = time.time()
             self._request_gatherer.notify_response(end_time - self._start_time)
         self.start()
+
+    def notify_done(self):
+        print("Request notified to stop.")
+        self._done = True
 
 
 def main():
@@ -190,17 +274,10 @@ def main():
     parser.add_argument('--project-id')
     parser.add_argument('--project-domain-name', default='Default')
     parser.add_argument('--project-domain-id')
-    parser.add_argument('--concurrency', type=int, default=1)
     args = parser.parse_args()
 
-    agent = client.Agent(reactor)
-    request_gatherer = RequestGatherer(args.concurrency)
-
-    for i in range(args.concurrency):
-        r = Request(agent, request_gatherer, args)
-        r.start()
-
-    request_gatherer.start()
+    test_tracker = TestTracker(args)
+    test_tracker.start()
 
     reactor.run()
 
