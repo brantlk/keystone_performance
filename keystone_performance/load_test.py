@@ -51,10 +51,10 @@ class TestTracker(object):
         self._agent = client.Agent(reactor)
 
         if args.type == 'quick':
-            self._run_time = 20  # seconds
+            self._run_time = 15  # seconds
             self._concurrencies = [1, 2, 4, 8]
         else:  # Full run
-            self._run_time = 60 * 2  # seconds
+            self._run_time = 60  # seconds
             self._concurrencies = [
                 4, 8, 12, 16, 20, 24, 28, 32, 40, 50, 64, 90, 100, 150, 200,
                 250, 300, 350, 400, 600, 800]
