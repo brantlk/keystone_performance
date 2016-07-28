@@ -55,7 +55,9 @@ class TestTracker(object):
             self._concurrencies = [1, 2, 4, 8]
         else:  # Full run
             self._run_time = 60  # seconds
-            self._concurrencies = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, ]
+            self._concurrencies = [
+                1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75,
+            ]
 
         self._concurrency_idx = 0
 
